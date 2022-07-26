@@ -1,0 +1,241 @@
+# If you come from bash you might have to change your $PATH.
+# export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in $ZSH/themes/
+# If set to an empty array, this variable will have no effect.
+# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment one of the following lines to change the auto-update behavior
+# zstyle ':omz:update' mode disabled  # disable automatic updates
+# zstyle ':omz:update' mode auto      # update automatically without asking
+# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
+
+# Uncomment the following line to change how often to auto-update (in days).
+# zstyle ':omz:update' frequency 13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS="true"
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+# ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# You can also set it to another string to have that shown instead of the default red dots.
+# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
+# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# You can set one of the optional three formats:
+# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+# or set a custom format using the strftime function format specifications,
+# see 'man strftime' for details.
+# HIST_STAMPS="mm/dd/yyyy"
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git)
+
+source $ZSH/oh-my-zsh.sh
+
+# User configuration
+
+# export MANPATH="/usr/local/man:$MANPATH"
+
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
+
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='mvim'
+# fi
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+# alias zshconfig="mate ~/.zshrc"
+# alias ohmyzsh="mate ~/.oh-my-zsh"
+source ~/powerlevel10k/powerlevel10k.zsh-theme
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+
+#---------
+# ------------------------------------------------------------------------------
+# Description
+# -----------
+#
+# sudo or sudo -e (replacement for sudoedit) will be inserted before the command
+#
+# ------------------------------------------------------------------------------
+# Authors
+# -------
+#
+# * Dongweiming <ciici123@gmail.com>
+# * Subhaditya Nath <github.com/subnut>
+# * Marc Cornellà <github.com/mcornella>
+# * Carlo Sala <carlosalag@protonmail.com>
+#
+# ------------------------------------------------------------------------------
+
+__sudo-replace-buffer() {
+  local old=$1 new=$2 space=${2:+ }
+
+  # if the cursor is positioned in the $old part of the text, make
+  # the substitution and leave the cursor after the $new text
+  if [[ $CURSOR -le ${#old} ]]; then
+    BUFFER="${new}${space}${BUFFER#$old }"
+    CURSOR=${#new}
+  # otherwise just replace $old with $new in the text before the cursor
+  else
+    LBUFFER="${new}${space}${LBUFFER#$old }"
+  fi
+}
+
+sudo-command-line() {
+  # If line is empty, get the last run command from history
+  [[ -z $BUFFER ]] && LBUFFER="$(fc -ln -1)"
+
+  # Save beginning space
+  local WHITESPACE=""
+  if [[ ${LBUFFER:0:1} = " " ]]; then
+    WHITESPACE=" "
+    LBUFFER="${LBUFFER:1}"
+  fi
+
+  {
+    # If $SUDO_EDITOR or $VISUAL are defined, then use that as $EDITOR
+    # Else use the default $EDITOR
+    local EDITOR=${SUDO_EDITOR:-${VISUAL:-$EDITOR}}
+
+    # If $EDITOR is not set, just toggle the sudo prefix on and off
+    if [[ -z "$EDITOR" ]]; then
+      case "$BUFFER" in
+        sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "" ;;
+        sudo\ *) __sudo-replace-buffer "sudo" "" ;;
+        *) LBUFFER="sudo $LBUFFER" ;;
+      esac
+      return
+    fi
+
+    # Check if the typed command is really an alias to $EDITOR
+
+    # Get the first part of the typed command
+    local cmd="${${(Az)BUFFER}[1]}"
+    # Get the first part of the alias of the same name as $cmd, or $cmd if no alias matches
+    local realcmd="${${(Az)aliases[$cmd]}[1]:-$cmd}"
+    # Get the first part of the $EDITOR command ($EDITOR may have arguments after it)
+    local editorcmd="${${(Az)EDITOR}[1]}"
+
+    # Note: ${var:c} makes a $PATH search and expands $var to the full path
+    # The if condition is met when:
+    # - $realcmd is '$EDITOR'
+    # - $realcmd is "cmd" and $EDITOR is "cmd"
+    # - $realcmd is "cmd" and $EDITOR is "cmd --with --arguments"
+    # - $realcmd is "/path/to/cmd" and $EDITOR is "cmd"
+    # - $realcmd is "/path/to/cmd" and $EDITOR is "/path/to/cmd"
+    # or
+    # - $realcmd is "cmd" and $EDITOR is "cmd"
+    # - $realcmd is "cmd" and $EDITOR is "/path/to/cmd"
+    # or
+    # - $realcmd is "cmd" and $EDITOR is /alternative/path/to/cmd that appears in $PATH
+    if [[ "$realcmd" = (\$EDITOR|$editorcmd|${editorcmd:c}) \
+      || "${realcmd:c}" = ($editorcmd|${editorcmd:c}) ]] \
+      || builtin which -a "$realcmd" | command grep -Fx -q "$editorcmd"; then
+      __sudo-replace-buffer "$cmd" "sudo -e"
+      return
+    fi
+
+    # Check for editor commands in the typed command and replace accordingly
+    case "$BUFFER" in
+      $editorcmd\ *) __sudo-replace-buffer "$editorcmd" "sudo -e" ;;
+      \$EDITOR\ *) __sudo-replace-buffer '$EDITOR' "sudo -e" ;;
+      sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "$EDITOR" ;;
+      sudo\ *) __sudo-replace-buffer "sudo" "" ;;
+      *) LBUFFER="sudo $LBUFFER" ;;
+    esac
+  } always {
+    # Preserve beginning space
+    LBUFFER="${WHITESPACE}${LBUFFER}"
+
+    # Redisplay edit buffer (compatibility with zsh-syntax-highlighting)
+    zle redisplay
+  }
+}
+
+zle -N sudo-command-line
+
+# Defined shortcut keys: [Esc] [Esc]
+bindkey -M emacs '\e\e' sudo-command-line
+bindkey -M vicmd '\e\e' sudo-command-line
+bindkey -M viins '\e\e' sudo-command-line
+#---------
+
+
+arrancarserver() {
+  sudo systemctl stop httpd
+  sudo systemctl start httpd
+  sudo systemctl stop mariadb.service
+  sudo systemctl start mariadb.service
+}
+
+addkeygitpersonal() {
+  cd /home/amartin/.ssh/keys/githubpersonal
+  eval "$(ssh-agent -s)"
+  ssh-add amartinro
+}
+
+pararserver() {
+  sudo systemctl stop httpd
+  sudo systemctl stop mariadb.service
+}
+
+alias instalarmariadb="sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql"
+alias ls="lsd"
+neofetch
